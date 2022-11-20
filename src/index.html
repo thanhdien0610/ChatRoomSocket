@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-main">
+        <div class="chat-sidebar">
+          <h3>Room:</h3>
+          <ul id="list-room">
+            <li id="room-name">JS</li>
+          </ul>
+
+          <h3>Users:</h3>
+          <ul id="users"></ul>
+
+          <div class="container-modal-send mt-5">
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="loadUsers()"
+              data-bs-toggle="modal"
+              data-bs-target="#myModalSend"
+            >
+              Send message
+            </button>
+            <div
+              class="modal fade"
+              id="myModalSend"
+              data-bs-backdrop="static"
+              data-bs-keyboard="false"
+              tabindex="-1"
+              aria-labelledby="myModalSendLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="myModalSendLabel">
+                      New message
+                    </h5>
+                    <button
+                      type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div class="modal-body">
+                    <form>
+                      <div class="mb-3">
+                        <label for="recipient-name" class="col-form-label"
+                          >Recipient:</label
+                        >
+                        <select
+                          class="form-select"
+                          aria-label="Default select example"
+                        ></select>
+                      </div>
+                      <div class="mb-3">
+                        <label for="message-text" class="col-form-label"
+                          >Message:</label
+                        >
+                        <textarea
+                          class="form-control"
+                          id="message-text"
+                        ></textarea>
+                      </div>
+                    </form>
+                  </div>
+                  <div class="modal-footer">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      Close
+                    </button>
+                    <button
+                      id="btn-private-mes"
+                      type="button"
+                      class="btn btn-primary"
+                      onclick="sendPrivateMes()"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="container-modal-receiver mt-5">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-bs-toggle="modal"
+              data-bs-target="#exampleModal"
+            >
+              Check message
+            </button>
+
+            <!-- Modal -->
+            <div
+              class="modal fade"
+              id="exampleModal"
+              tabindex="-1"
+              aria-labelledby="exampleModalLabel"
+              aria-hidden="true"
+            >
+              <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">
+                      Message control
+                    </h1>
+                    <button
+                      type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"
+                    ></button>
+                  </div>
+                  <div class="modal-body" id="modal-receive"></div>
+                  <div class="modal-footer">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      data-bs-dismiss="modal"
+                    >
+                      Close
+                    </button>
+                    <button type="button" class="btn btn-primary">
+                      Save changes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-messages">
+          <div class="message">
+            <p class="meta">
+              Admin
+              <span> 00:00 </span>
+            </p>
+            <p class="text">Welcome to room.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-form-container">
+        <form id="chat-form">
+          <input id="msg" type="text" placeholder="Enter Message" />
+          <button class="btn-send">Send</button>
+        </form>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      const socket = io();
+
+      const d = new Date();
+
+      const nameUser = prompt("Enter your name:");
+      let allUsers;
+      socket.emit("user-connect", {
+        name: nameUser,
+      });
+
+      socket.on("user-list", (listUsers) => {
+        const listUser = document.querySelector("#users");
+        listUser.innerHTML = "";
+        // console.log(listUsers);
+        allUsers = listUsers;
+        listUsers.forEach((element) => {
+          const userOnList = document.createElement("li");
+          userOnList.setAttribute("id", "user-name");
+          userOnList.textContent = `${element.nameUser}`;
+          listUser.appendChild(userOnList);
+        });
+      });
+
+      const chatForm = document.querySelector("#chat-form");
+      const chatMes = document.querySelector("#msg");
+      const chatContain = document.querySelector(".chat-messages");
+
+      chatForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const message = chatMes.value;
+        // console.log(message);
+
+        socket.emit("on-chat", {
+          name: nameUser,
+          message: message,
+        });
+
+        chatMes.value = "";
+      });
+
+      socket.on("user-chat", (message) => {
+        const userContain = document.createElement("div");
+        userContain.setAttribute("class", "message");
+
+        const spanTime = document.createElement("span");
+        let hour = d.getHours();
+        let minutes = d.getMinutes();
+        spanTime.textContent = ` ${hour}: ${minutes}`;
+        console.log(hour);
+        const nameChat = document.createElement("p");
+        nameChat.setAttribute("class", "meta");
+
+        nameChat.textContent = `${message.name}`;
+        nameChat.appendChild(spanTime);
+        const msg = document.createElement("p");
+        msg.setAttribute("class", "text");
+        msg.textContent = `${message.message}`;
+        userContain.appendChild(nameChat);
+        userContain.appendChild(msg);
+
+        chatContain.appendChild(userContain);
+      });
+
+      socket.on("messageReceived", (data) => {
+        console.log(data);
+        const userContain = document.createElement("div");
+        userContain.setAttribute("class", "message-modal");
+
+        const spanTime = document.createElement("span");
+        let hour = data.time.hour;
+        let minutes = data.time.minutes;
+        spanTime.textContent = ` ${hour}: ${minutes}`;
+        console.log(hour);
+        const nameChat = document.createElement("p");
+        nameChat.setAttribute("class", "meta-modal");
+
+        nameChat.textContent = `${data.userSend}`;
+        nameChat.appendChild(spanTime);
+        const msg = document.createElement("p");
+        msg.setAttribute("class", "text-modal");
+        msg.textContent = `${data.message}`;
+        userContain.appendChild(nameChat);
+        userContain.appendChild(msg);
+
+        const chatContain = document.getElementById("modal-receive");
+        chatContain.appendChild(userContain);
+      });
+
+      loadUsers = () => {
+        const formSelect = document.querySelector(".form-select");
+        formSelect.innerHTML = "";
+        allUsers.forEach((element, index) => {
+          const userOnList = document.createElement("option");
+
+          userOnList.setAttribute("value", index + 1);
+
+          userOnList.textContent = `${element.nameUser}`;
+          formSelect.appendChild(userOnList);
+        });
+      };
+
+      sendPrivateMes = () => {
+        const formSelect = document.querySelector(".form-select");
+        const targetUser = formSelect.options[formSelect.selectedIndex].text;
+        const formMes = document.querySelector(".form-control");
+        const messSend = formMes.value;
+        socket.emit("send-private-message", {
+          userSend: socket.id,
+          userGet: targetUser,
+          message: messSend,
+          time: {
+            hour: d.getHours(),
+            minutes: d.getMinutes(),
+          },
+        });
+        formMes.value = "";
+
+        $("#myModalSend").modal("hide");
+      };
+    </script>
+  </body>
+</html>
